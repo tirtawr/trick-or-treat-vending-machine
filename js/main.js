@@ -11,7 +11,7 @@ let curentVideo
 let serial
 let isDispensing = false
 
-const portName = '/dev/tty.usbserial-1410'
+const portName = '/dev/tty.usbserial-1420'
 
 function setup() {
     noCanvas()
@@ -108,7 +108,7 @@ function _onData() {
             case arduinoEvents.BUTTON_PRESSED:
                 _onButtonPressed()
                 break
-            case arduinoEvents.DISPENSE_DONE:
+            case arduinoEvents.DISPENSE_FINISHED:
                 isDispensing = false
                 break
         }
