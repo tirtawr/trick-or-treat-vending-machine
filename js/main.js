@@ -1,4 +1,4 @@
-let images
+let videos
 const arduinoEvents = {
     BUTTON_PRESSED: 'BUTTON_PRESSED',
     DISPENSE_TRICK: 'DISPENSE_TRICK',
@@ -7,18 +7,14 @@ const arduinoEvents = {
 }
 
 let currentImage
+let curentVideo
 let serial
+let isDispensing = false
+
 const portName = '/dev/tty.usbserial-1410'
 
 function setup() {
-    createCanvas(windowWidth, windowHeight)
-    images = {
-            main: loadImage('img/main.png'),
-            treat: loadImage('img/treat.png'),
-            trick: loadImage('img/trick.png'),
-            loading: loadImage('img/loading.png')
-        }
-    currentImage = images.main
+    noCanvas()
 
     serial = new p5.SerialPort()    // make a new instance of the serialport library
     serial.on('list', _onList)    // set a callback function for the serialport list event
@@ -30,34 +26,65 @@ function setup() {
 
     serial.list()                   // list the serial ports
     serial.open(portName)
+
+    videos = {
+        main: document.getElementById('video-main'),
+        wheel_treat: document.getElementById('video-wheel-treat'),
+        wheel_trick: document.getElementById('video-wheel-trick')
+    }
+    videos.main.loop = true
+    videos.wheel_treat.loop = false
+    videos.wheel_trick.loop = false
+
+    videos.main.style.display = "block"
+
+    videos.wheel_treat.addEventListener('ended', () => { 
+        console.log('DISPENSE_TREAT')
+        videos.main.style.display = "block"
+        videos.wheel_treat.style.display = "none"
+        serial.write(arduinoEvents.DISPENSE_TREAT)
+    })
+
+    videos.wheel_trick.addEventListener('ended', () => {
+        console.log('DISPENSE_TRICK')
+        videos.main.style.display = "block"
+        videos.wheel_trick.style.display = "none"
+        serial.write(arduinoEvents.DISPENSE_TRICK)
+    })
+
+    return
 }
 
-function draw() {
-    background(200)
-    _drawImageAtCenter(currentImage)
+function _playMainVideo() {
+    videos.main.play()
 }
 
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight)
+function _dispenseTreat() {
+    videos.main.style.display = "none"
+    videos.wheel_treat.style.display = "block"
+    videos.wheel_treat.play()
 }
+
+function _dispenseTrick() {
+    videos.main.style.display = "none"
+    videos.wheel_trick.style.display = "block"
+    videos.wheel_trick.play()
+}
+
+function _dispenseRandom() {
+    if (Math.random() > 0.5) {
+        _dispenseTreat()
+    } else {
+        _dispenseTrick()
+    }
+}
+
 
 function _onButtonPressed() {
-    // TODO: fix this hax
-    currentImage = images.loading
-    if (Math.random() > 0.5) {
-        // Trick
-        setTimeout(() => {
-            currentImage = images.trick
-            serial.write(arduinoEvents.DISPENSE_TRICK);
-        }, 4000)
-    } else {
-        // Treat
-        setTimeout(() => {
-            currentImage = images.treat
-            serial.write(arduinoEvents.DISPENSE_TREAT);
-        }, 4000)
+    if (!isDispensing) {
+        isDispensing = true
+        _dispenseRandom()
     }
-    setTimeout(() => { currentImage = images.main }, 10000)
 }
 
 function _onList() {
@@ -82,6 +109,7 @@ function _onData() {
                 _onButtonPressed()
                 break
             case arduinoEvents.DISPENSE_DONE:
+                isDispensing = false
                 break
         }
     }
@@ -93,8 +121,4 @@ function _onError() {
 
 function _onClose() {
     console.log('_onClose')
-}
-
-function _drawImageAtCenter(img) {
-    image(img, windowWidth / 2 - img.width / 2, windowHeight / 2 - img.height / 2)
 }
