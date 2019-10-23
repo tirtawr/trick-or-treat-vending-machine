@@ -11,7 +11,7 @@ let curentVideo
 let serial
 let isDispensing = false
 
-const portName = '/dev/tty.usbserial-1420'
+const portName = 'COM3'
 
 function setup() {
     noCanvas()
