@@ -115,6 +115,10 @@ function _onData() {
     }
 }
 
+function _pauseMainVideo() {
+    videos.main.pause()
+}
+
 function _onError() {
     console.log('_onError')
 }
